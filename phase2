@@ -1,4 +1,6 @@
-# كود تدريب موديل التايتنك - المرحله الثانيه
+# ==============================================================================
+# كود المرحلة الثانية 
+# ==============================================================================
 
 import os
 import joblib
@@ -9,86 +11,86 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 
-# تجهيز ملف البيانت والمودل الثابت بالسيستم
+# تحديد ملف البيانات والموديل الثابت بالسيستم
 train_file = "train.csv"
 model_path = "titanic_rf_model.pkl"
 
-print("--- starting titanic training pipeline ---")
+print("--- Starting Titanic Training Pipeline (Phase 2) ---")
 
 # ------------------------------------------------------------------------------
-# #1# قراءة الفايل الاساسي وتحميل البيانت
+# 1. قراءة الفايل الأساسي وتحميل البيانات
 # ------------------------------------------------------------------------------
-data = pd.read_csv(train_file)
-print(f"data loaded successfully: {data.shape[0]} rows found.")
+raw_data = pd.read_csv(train_file)
+print(f"Data loaded successfully: {raw_data.shape[0]} rows found.")
 
 # ------------------------------------------------------------------------------
-# #2# تنظيف الخصائص ومعالجه الفراغات والقيم المفقوده
+# 2. تنظيف الخصائص ومعالجة الفراغات والقيم المفقودة
 # ------------------------------------------------------------------------------
-# تحديد الاعمده المهمه الي طلبها الدكتور لتوقع النجاة
+# تحديد الأعمدة المهمة التي طلبها الدكتور لتوقع النجاة
 features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
-X = data[features].copy()
-y = data['Survived'].copy()
+X = raw_data[features].copy()
+y = raw_data['Survived'].copy()
 
-# تعبئة الفراغات بمتوسط القيم والمنوال عشان المودل ما يضرب
+# تعبئة الفراغات بمتوسط القيم والمنوال لحماية خط تدريب الموديل لمنع الأخطاء
 X['Age'] = X['Age'].fillna(X['Age'].median())
 X['Fare'] = X['Fare'].fillna(X['Fare'].median())
 X['Embarked'] = X['Embarked'].fillna(X['Embarked'].mode()[0])
 
-# تحويل النصوص والكلمات الى ارقام وحفظ الـ encoders
+# التشفير الاحترافي: نقوم بعمل fit على بيانات التدريب بالكامل وتحويل النصوص لأرقام
 le_sex = LabelEncoder()
 le_embarked = LabelEncoder()
 X['Sex'] = le_sex.fit_transform(X['Sex'])
 X['Embarked'] = le_embarked.fit_transform(X['Embarked'])
 
-# حفظ الـ encoders عشان نستخدمهم دايركت في الفيز الثالث
+# حفظ أدوات التشفير (Encoders) عشان نستخدمها دايركت في الفيز الثالث للتوقعات
 joblib.dump(le_sex, "gender_encoder.pkl")
 joblib.dump(le_embarked, "embarked_encoder.pkl")
-print("data preprocessing completed & encoders saved.")
+print("Data preprocessing completed & encoders saved successfully.")
 
 # ------------------------------------------------------------------------------
-# #3# تقسيم البيانت 80% تدريب و 20% تحقق داخلي
+# 3. تقسيم البيانات 80% تدريب و 20% تحقق داخلي (Stratified)
 # ------------------------------------------------------------------------------
 X_train, X_val, y_train, y_val = train_test_split(
     X, y, test_size=0.20, random_state=42, stratify=y
 )
-print(f"train size: {X_train.shape[0]} | validation size: {X_val.shape[0]}")
+print(f"Train size: {X_train.shape[0]} | Validation size: {X_val.shape[0]}")
 
 # ------------------------------------------------------------------------------
-# #4# تدريب المودل باعدادات عادية وبسيطة ومباشرة
+# 4. تدريب الموديل بإعدادات عادية وبسيطة ومباشرة (Random Forest)
 # ------------------------------------------------------------------------------
-print("\ntraining random forest classifier...")
+print("\nTraining Random Forest Classifier...")
 model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
 model.fit(X_train, y_train)
 
-# حساب سكور الدقه للترين والتست الداخلي
-print(f"train accuracy score: {model.score(X_train, y_train) * 100:.2f}%")
-print(f"validation accuracy score: {model.score(X_val, y_val) * 100:.2f}%")
+# حساب سكور الدقة للتدريب والتحقق الداخلي
+print(f"Train Accuracy Score: {model.score(X_train, y_train) * 100:.2f}%")
+print(f"Validation Accuracy Score: {model.score(X_val, y_val) * 100:.2f}%")
 
 # ------------------------------------------------------------------------------
-# #5# طباعه التقرير النهائي ورسم مصفوفه الارتباك
+# 5. طباعة التقرير النهائي ورسم مصفوفة الارتباك وتصديرها
 # ------------------------------------------------------------------------------
-print("\ngenerating classification report:")
+print("\nGenerating Classification Report:")
 preds = model.predict(X_val)
 print(classification_report(y_val, preds))
 
-# رسم مصفوفه الارتباك وحفظها كصورة بكولاب
-print("plotting confusion matrix graph...")
-ConfusionMatrixDisplay.from_predictions(y_val, preds, cmap=plt.cm.Blues)
-plt.title("validation confusion matrix")
-plt.savefig("titanic_validation_confusion_matrix.png", bbox_inches='tight')
+# رسم مصفوفة الارتباك بدقة عالية وحفظها في مجلد reports
+os.makedirs("reports", exist_ok=True)
+fig, ax = plt.subplots(figsize=(6,6))
+ConfusionMatrixDisplay.from_predictions(y_val, preds, cmap=plt.cm.Blues, ax=ax)
+plt.title("Validation Confusion Matrix")
+plt.savefig("reports/confusion_matrix.png", dpi=300)
 plt.show()
 
 # ------------------------------------------------------------------------------
-# #6# حساب اهميه الخصائص وترتيبها (feature importance)
+# 6. حساب أهمية الخصائص وترتيبها (Feature Importance)
 # ------------------------------------------------------------------------------
-# هنا بنشوف اي خاصيه اثرت بتوقع النجاه اكثر شي بالترتيب
-print("\nfeature importance metrics:")
+print("\nFeature Importance Metrics:")
 importances = model.feature_importances_
 for name, importance in zip(features, importances):
     print(f"-> {name:<10}: {importance * 100:.2f}%")
 
 # ------------------------------------------------------------------------------
-# #7# حفظ ملف المودل النهائي المعتمد
+# 7. حفظ ملف الموديل النهائي المعتمد في المجلد الرئيسي
 # ------------------------------------------------------------------------------
 joblib.dump(model, model_path)
-print(f"\n[SUCCESS] final model saved to: {model_path}")
+print(f"\n[SUCCESS] Final model saved to: {model_path}")
