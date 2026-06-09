@@ -1,0 +1,92 @@
+# كود البونص: مقارنة الموديلات لتحسين الدقة - المرحله الرابعه
+
+import os
+import joblib
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression  # الخوارزمية الجديدة حقت البونص
+
+# تجهيز ملف البيانت والمودل المحفوظ سابقا
+train_file = "train.csv"
+model_path = "titanic_rf_model.pkl"
+
+print("--- starting titanic bonus model comparison pipeline ---")
+
+# ------------------------------------------------------------------------------
+# #1# قراءة البيانت وتجهيزها بشكل سريع
+# ------------------------------------------------------------------------------
+raw_data = pd.read_csv(train_file)
+features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
+
+X = raw_data[features].copy()
+y = raw_data['Survived'].copy()
+
+# معالجة الفراغات والقيم المفقوده بالوسيط والمنوال نفس الفيز الثاني بالظبط
+X['Age'] = X['Age'].fillna(X['Age'].median())
+X['Fare'] = X['Fare'].fillna(X['Fare'].median())
+X['Embarked'] = X['Embarked'].fillna(X['Embarked'].mode()[0])
+
+# تشفير النصوص والكلمات الى ارقام
+le_sex = LabelEncoder()
+le_embarked = LabelEncoder()
+X['Sex'] = le_sex.fit_transform(X['Sex'])
+X['Embarked'] = le_embarked.fit_transform(X['Embarked'])
+
+# تقسيم البيانت بنفس الراندوم ستيت لضمان تطابق الفاليديشن ست
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.20, random_state=42, stratify=y
+)
+
+# ------------------------------------------------------------------------------
+# #2# استدعاء مودل الراندوم فورست حق زياد الاساسي وحساب دقته
+# ------------------------------------------------------------------------------
+print("\nloading baseline random forest model...")
+rf_model = joblib.load(model_path)
+rf_acc = rf_model.score(X_val, y_val) * 100
+
+# ------------------------------------------------------------------------------
+# #3# تدريب المودل الجديد (Logistic Regression) حق البونص
+# ------------------------------------------------------------------------------
+print("training logistic regression classifier for bonus points...")
+lr_model = LogisticRegression(max_iter=500, random_state=42)
+lr_model.fit(X_train, y_train)
+lr_acc = lr_model.score(X_val, y_val) * 100
+
+# ------------------------------------------------------------------------------
+# #4# طباعه المقارنه المباشره بين الموديلين على الشاشة
+# ------------------------------------------------------------------------------
+print("\n" + "=" * 45)
+print("       models accuracy verification summary     ")
+print("=" * 45)
+print(f"-> Random Forest Accuracy:     {rf_acc:.2f}%")
+print(f"-> Logistic Regression Accuracy: {lr_acc:.2f}%")
+print("=" * 45)
+
+# ------------------------------------------------------------------------------
+# #5# رسم بياني وتصدير المخطط للمقارنه (Bar Chart)
+# ------------------------------------------------------------------------------
+print("\ngenerating comparison bar chart...")
+os.makedirs("reports", exist_ok=True)
+
+models = ['Random Forest', 'Logistic Regression']
+accuracies = [rf_acc, lr_acc]
+
+plt.figure(figsize=(6, 4))
+plt.bar(models, accuracies, color=['#1f77b4', '#aec7e8'], width=0.4)
+plt.ylabel('accuracy score (%)')
+plt.title('bonus: model performance comparison')
+plt.ylim(70, 90)  # عشان يوضح الفرق بين العمودين بشكل ممتاز
+
+# كتابة النسب فوق العواميد تلقائيا وبخط عريض
+for i, v in enumerate(accuracies):
+    plt.text(i, v + 0.5, f"{v:.2f}%", ha='center', fontweight='bold')
+
+# حفظ الصورة في مجلد التقارير المعتمد
+output_bonus_img = "reports/bonus_model_comparison.png"
+plt.savefig(output_bonus_img, bbox_inches='tight')
+plt.show()
+
+print(f"\n[SUCCESS] comparison graph saved inside reports folder at: {output_bonus_img}")
