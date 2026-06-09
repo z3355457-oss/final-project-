@@ -1,0 +1,94 @@
+# كود تدريب موديل التايتنك - المرحله الثانيه
+
+import os
+import joblib
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, ConfusionMatrixDisplay
+
+# تجهيز ملف البيانت والمودل الثابت بالسيستم
+train_file = "train.csv"
+model_path = "titanic_rf_model.pkl"
+
+print("--- starting titanic training pipeline ---")
+
+# ------------------------------------------------------------------------------
+# #1# قراءة الفايل الاساسي وتحميل البيانت
+# ------------------------------------------------------------------------------
+data = pd.read_csv(train_file)
+print(f"data loaded successfully: {data.shape[0]} rows found.")
+
+# ------------------------------------------------------------------------------
+# #2# تنظيف الخصائص ومعالجه الفراغات والقيم المفقوده
+# ------------------------------------------------------------------------------
+# تحديد الاعمده المهمه الي طلبها الدكتور لتوقع النجاة
+features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
+X = data[features].copy()
+y = data['Survived'].copy()
+
+# تعبئة الفراغات بمتوسط القيم والمنوال عشان المودل ما يضرب
+X['Age'] = X['Age'].fillna(X['Age'].median())
+X['Fare'] = X['Fare'].fillna(X['Fare'].median())
+X['Embarked'] = X['Embarked'].fillna(X['Embarked'].mode()[0])
+
+# تحويل النصوص والكلمات الى ارقام وحفظ الـ encoders
+le_sex = LabelEncoder()
+le_embarked = LabelEncoder()
+X['Sex'] = le_sex.fit_transform(X['Sex'])
+X['Embarked'] = le_embarked.fit_transform(X['Embarked'])
+
+# حفظ الـ encoders عشان نستخدمهم دايركت في الفيز الثالث
+joblib.dump(le_sex, "gender_encoder.pkl")
+joblib.dump(le_embarked, "embarked_encoder.pkl")
+print("data preprocessing completed & encoders saved.")
+
+# ------------------------------------------------------------------------------
+# #3# تقسيم البيانت 80% تدريب و 20% تحقق داخلي
+# ------------------------------------------------------------------------------
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.20, random_state=42, stratify=y
+)
+print(f"train size: {X_train.shape[0]} | validation size: {X_val.shape[0]}")
+
+# ------------------------------------------------------------------------------
+# #4# تدريب المودل باعدادات عادية وبسيطة ومباشرة
+# ------------------------------------------------------------------------------
+print("\ntraining random forest classifier...")
+model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+model.fit(X_train, y_train)
+
+# حساب سكور الدقه للترين والتست الداخلي
+print(f"train accuracy score: {model.score(X_train, y_train) * 100:.2f}%")
+print(f"validation accuracy score: {model.score(X_val, y_val) * 100:.2f}%")
+
+# ------------------------------------------------------------------------------
+# #5# طباعه التقرير النهائي ورسم مصفوفه الارتباك
+# ------------------------------------------------------------------------------
+print("\ngenerating classification report:")
+preds = model.predict(X_val)
+print(classification_report(y_val, preds))
+
+# رسم مصفوفه الارتباك وحفظها كصورة بكولاب
+print("plotting confusion matrix graph...")
+ConfusionMatrixDisplay.from_predictions(y_val, preds, cmap=plt.cm.Blues)
+plt.title("validation confusion matrix")
+plt.savefig("titanic_validation_confusion_matrix.png", bbox_inches='tight')
+plt.show()
+
+# ------------------------------------------------------------------------------
+# #6# حساب اهميه الخصائص وترتيبها (feature importance)
+# ------------------------------------------------------------------------------
+# هنا بنشوف اي خاصيه اثرت بتوقع النجاه اكثر شي بالترتيب
+print("\nfeature importance metrics:")
+importances = model.feature_importances_
+for name, importance in zip(features, importances):
+    print(f"-> {name:<10}: {importance * 100:.2f}%")
+
+# ------------------------------------------------------------------------------
+# #7# حفظ ملف المودل النهائي المعتمد
+# ------------------------------------------------------------------------------
+joblib.dump(model, model_path)
+print(f"\n[SUCCESS] final model saved to: {model_path}")
