@@ -1,91 +1,71 @@
-# كود تقييم المودل وتوقع ملف كاجل - المرحله الثالثه
+# ==========================================
+# كود المرحلة الثالث
+# ==========================================
 
 import os
 import joblib
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 
-# تجهيز مسارات الملفات والمودل الثابت بالسيستم
 train_file = "train.csv"
 test_file = "test.csv"
 model_path = "titanic_rf_model.pkl"
 submission_path = "final_titanic_predictions.csv"
 
-print("--- starting titanic evaluation & prediction pipeline ---")
-
-# ------------------------------------------------------------------------------
-# #1# تحميل المودل والـ encoders المحفوظة من الفيز الثاني
-# ------------------------------------------------------------------------------
-print("loading trained model and encoders...")
+# 1. تحميل المودل وأدوات التشفير المحفوظة من الفيز الثاني
 loaded_model = joblib.load(model_path)
-le_sex = joblib.load("gender_encoder.pkl")
-le_embarked = joblib.load("embarked_encoder.pkl")
-print("all model artifacts loaded successfully.")
+le_sex = joblib.load("gender_encoder.pkl")          # استدعاء تشفير الجنس الجاهز
+le_embarked = joblib.load("embarked_encoder.pkl")    # استدعاء تشفير الميناء الجاهز
+print("Model and Encoders loaded successfully.")
 
-# ------------------------------------------------------------------------------
-# #2# قراءة البيانت وتجهيزها نفس الفيز الثاني بالظبط
-# ------------------------------------------------------------------------------
+# 2. قراءة البيانات وتجهيزها
 raw_data = pd.read_csv(train_file)
 features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
 
 X = raw_data[features].copy()
 y = raw_data['Survived'].copy()
 
-# تعبئة الفراغات بمتوسط القيم والمنوال
-X['Age'] = X['Age'].fillna(raw_data['Age'].median())
-X['Fare'] = X['Fare'].fillna(raw_data['Fare'].median())
-X['Embarked'] = X['Embarked'].fillna(raw_data['Embarked'].mode()[0])
+X['Age'] = X['Age'].fillna(X['Age'].median())
+X['Fare'] = X['Fare'].fillna(X['Fare'].median())
+X['Embarked'] = X['Embarked'].fillna(X['Embarked'].mode()[0])
 
-# تشفير الفاليديشن باستخدام الـ encoders المستدعاة حقت زياد
+# استخدام التشفير المستدعى مباشرة (بدون fit_transform)
 X['Sex'] = le_sex.transform(X['Sex'])
 X['Embarked'] = le_embarked.transform(X['Embarked'])
 
-# تقسيم البيانت عشان نطلع الفاليديشن ست (20%) ونطابق الارقام
-_, X_val, _, y_val = train_test_split(
-    X, y, test_size=0.20, random_state=42, stratify=y
-)
+# تقسيم البيانات للحصول على نفس الفاليديشن ست
+_, X_val, _, y_val = train_test_split(X, y, test_size=0.20, random_state=42, stratify=y)
 
-# ------------------------------------------------------------------------------
-# #3# حساب الدقه وطباعه تقرير التصنيف النهائي
-# ------------------------------------------------------------------------------
+# 3. حساب الدقه وطباعه تقرير التصنيف
 val_preds = loaded_model.predict(X_val)
-print(f"\nfinal validation accuracy: {loaded_model.score(X_val, y_val) * 100:.2f}%")
-print("\nclassification report summary:")
+print(f"Validation Accuracy: {loaded_model.score(X_val, y_val) * 100:.2f}%")
+print("\nClassification Report:")
 print(classification_report(y_val, val_preds))
 
-# ------------------------------------------------------------------------------
-# #4# رسم مصفوفه الارتباك للمرحله الثالثه وحفظها في مجلد reports
-# ------------------------------------------------------------------------------
-print("plotting and saving confusion matrix graph...")
+# 4. رسم مصفوفه الارتباك وحفظها
 os.makedirs("reports", exist_ok=True)
-
 ConfusionMatrixDisplay.from_predictions(y_val, val_preds, cmap=plt.cm.Blues)
-plt.title("validation confusion matrix")
-output_img = "reports/confusion_matrix.png"
-plt.savefig(output_img, bbox_inches='tight')
+plt.title("Validation Confusion Matrix")
+plt.savefig("reports/confusion_matrix.png")
 plt.show()
-print(f"matrix graphic saved to: {output_img}")
 
-# ------------------------------------------------------------------------------
-# #5# تنظيف ملف التست حق كاجل والتنبؤ النهائي للمسابقة
-# ------------------------------------------------------------------------------
-print("\nprocessing unseen kaggle test dataset...")
+# 5. تنظيف ملف التست حق كاجل والتنبؤ النهائي
+print("\nProcessing kaggle test file...")
 test_data = pd.read_csv(test_file)
 X_test = test_data[features].copy()
 
-# تعبئة الفراغات في ملف التست بناء على قيم ملف الترين عشان ما يصير تسريب
+# تعبئة فراغات التيست بناء على الترين
 X_test['Age'] = X_test['Age'].fillna(raw_data['Age'].median())
 X_test['Fare'] = X_test['Fare'].fillna(raw_data['Fare'].median())
 X_test['Embarked'] = X_test['Embarked'].fillna(raw_data['Embarked'].mode()[0])
 
-# تشفير اعمده ملف كاجل باستخدام الـ encoders المستدعاة بدون fit جديد
+# تطبيق التشفير المستدعى على ملف كاجل
 X_test['Sex'] = le_sex.transform(X_test['Sex'])
 X_test['Embarked'] = le_embarked.transform(X_test['Embarked'])
 
-# التوقع النهائي وتصدير الفايل النهائي للمسابقة
+# التوقع النهائي وتصدير الفايل
 final_predictions = loaded_model.predict(X_test)
 
 submission_df = pd.DataFrame({
@@ -93,6 +73,5 @@ submission_df = pd.DataFrame({
     "Survived": final_predictions
 })
 
-# حفظ ملف السي اس في النهائي للتسليم
 submission_df.to_csv(submission_path, index=False)
-print(f"\n[SUCCESS] process finished. final submission saved at: {submission_path}")
+print(f"Process finished. Final submission saved at: {submission_path}")
