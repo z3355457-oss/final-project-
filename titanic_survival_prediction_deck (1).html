@@ -1,0 +1,564 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .deck-wrapper { background: #eef2f7; padding: 20px; min-height: 500px; display: flex; flex-direction: column; align-items: center; }
+  .progress-bar-wrap { width: 100%; max-width: 860px; height: 4px; background: #d0d8e8; border-radius: 2px; margin-bottom: 16px; }
+  .progress-bar-fill { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #5b5ef4, #1ec8a0); transition: width 0.4s ease; }
+  .slide-card { background: #fff; border-radius: 18px; width: 100%; max-width: 860px; min-height: 460px; padding: 44px 48px 36px; display: none; position: relative; box-shadow: 0 2px 24px rgba(0,0,0,0.08); }
+  .slide-card.active { display: flex; flex-direction: column; justify-content: flex-start; }
+  .slide-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; flex: 1; }
+  .slide-inner.full { grid-template-columns: 1fr; }
+  .eyebrow { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #5b5ef4; border: 1.5px solid #c8c9fa; border-radius: 30px; padding: 4px 14px; margin-bottom: 18px; }
+  .eyebrow.orange { color: #d97706; border-color: #fcd34d; }
+  .eyebrow.green { color: #059669; border-color: #6ee7b7; }
+  .eyebrow.teal { color: #0891b2; border-color: #a5f3fc; }
+  .slide-title { font-size: 26px; font-weight: 800; color: #1a1a2e; line-height: 1.2; margin-bottom: 14px; }
+  .slide-title span { color: #5b5ef4; }
+  .slide-title span.teal { color: #0891b2; }
+  .slide-title span.orange { color: #d97706; }
+  .slide-desc { font-size: 13.5px; color: #64748b; line-height: 1.7; margin-bottom: 18px; }
+  .bullet-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 13px; }
+  .bullet-dot { width: 8px; height: 8px; border-radius: 50%; background: #5b5ef4; margin-top: 5px; flex-shrink: 0; }
+  .bullet-dot.orange { background: #f59e0b; }
+  .bullet-title { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 2px; }
+  .bullet-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
+  .right-panel { background: #f8faff; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .panel-title { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #94a3b8; text-align: center; margin-bottom: 4px; }
+  .nav-row { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
+  .slide-counter { font-size: 13px; font-weight: 600; color: #94a3b8; }
+  .slide-counter b { color: #1a1a2e; }
+  .dots { display: flex; gap: 7px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #d0d8e8; cursor: pointer; transition: background 0.2s; }
+  .dot.active { background: #5b5ef4; }
+  .nav-btns { display: flex; gap: 10px; }
+  .btn-prev { background: #fff; border: 1.5px solid #d0d8e8; color: #64748b; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-next { background: #5b5ef4; border: none; color: #fff; padding: 8px 22px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .btn-next.finish { background: #059669; }
+  .info-badge { background: #fff; border: 1.5px solid #e8ecf4; border-radius: 10px; padding: 12px 14px; }
+  .info-badge-icon { font-size: 16px; color: #f59e0b; margin-bottom: 4px; }
+  .info-badge-title { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
+  .info-badge-body { font-size: 12px; color: #475569; line-height: 1.5; }
+  .hero-image { background: linear-gradient(135deg, #0f172a 60%, #1e3a5f 100%); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; min-height: 240px; position: relative; }
+  .hero-img-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px; }
+  .hero-img-title { font-size: 16px; font-weight: 800; color: #fff; }
+  .ship-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.25; }
+  .stat-box { background: #fff; border: 1.5px solid #e8ecf4; border-radius: 12px; padding: 14px 16px; text-align: center; }
+  .stat-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+  .stat-label.blue { color: #5b5ef4; }
+  .stat-label.green { color: #059669; }
+  .stat-num { font-size: 28px; font-weight: 800; color: #1a1a2e; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-small { background: #f8faff; border: 1px solid #e8ecf4; border-radius: 8px; padding: 10px 12px; text-align: center; }
+  .stat-small-label { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
+  .stat-small-num { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+  .challenge-card { background: #fff; border: 1.5px solid #e8ecf4; border-radius: 10px; padding: 14px 16px; }
+  .challenge-title { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #5b5ef4; margin-bottom: 6px; }
+  .challenge-title.teal { color: #0891b2; }
+  .challenge-body { font-size: 12px; color: #64748b; line-height: 1.5; }
+  .pipeline-step { display: flex; align-items: flex-start; gap: 12px; background: #fff; border: 1.5px solid #e8ecf4; border-radius: 10px; padding: 12px 14px; position: relative; }
+  .pipeline-step.active-step { border-color: #1ec8a0; background: #f0fdf8; }
+  .step-num { width: 30px; height: 30px; border-radius: 8px; background: #5b5ef4; color: #fff; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-num.green { background: #1ec8a0; }
+  .step-title { font-size: 12px; font-weight: 700; color: #1a1a2e; margin-bottom: 2px; }
+  .step-desc { font-size: 11px; color: #64748b; line-height: 1.4; }
+  .step-badge { font-size: 10px; font-weight: 700; background: #e8ecf4; color: #64748b; border-radius: 6px; padding: 2px 8px; margin-left: auto; flex-shrink: 0; align-self: center; }
+  .step-badge.blue { background: #ede9fe; color: #5b5ef4; }
+  .step-badge.green { background: #d1fae5; color: #059669; }
+  .connector { width: 2px; height: 12px; background: #d0d8e8; margin: 0 auto 0 21px; }
+  canvas { width: 100% !important; }
+  .limit-card { display: flex; align-items: flex-start; gap: 14px; background: #fff; border: 1.5px solid #e8ecf4; border-radius: 12px; padding: 16px; }
+  .limit-letter { width: 34px; height: 34px; border-radius: 10px; background: #fef3c7; color: #d97706; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .limit-title { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #1a1a2e; margin-bottom: 4px; }
+  .limit-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
+  .crit-box { background: #fef9ec; border: 1.5px solid #fcd34d; border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 10px; }
+  .crit-title { font-size: 11px; font-weight: 700; color: #d97706; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .crit-body { font-size: 12px; color: #92400e; line-height: 1.5; }
+  .milestone-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid #e8ecf4; }
+  .milestone-item:last-child { border-bottom: none; }
+  .m-dot { width: 14px; height: 14px; border-radius: 50%; background: #5b5ef4; margin-top: 3px; flex-shrink: 0; }
+  .m-tag { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #5b5ef4; margin-bottom: 3px; }
+  .m-title { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 3px; }
+  .m-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
+  .deploy-box { background: #f8faff; border: 1.5px solid #c8c9fa; border-radius: 12px; padding: 16px; }
+  .deploy-tag { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #5b5ef4; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .deploy-body { font-size: 12.5px; color: #475569; line-height: 1.6; }
+  .authors-row { display: flex; gap: 24px; margin: 14px 0; }
+  .author-block { }
+  .author-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
+  .author-name { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+  .divider { height: 1px; background: #e8ecf4; margin: 10px 0; }
+  .feat-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .feat-label { font-size: 11px; color: #475569; width: 70px; flex-shrink: 0; font-weight: 600; }
+  .feat-bar-bg { flex: 1; height: 10px; background: #e8ecf4; border-radius: 5px; overflow: hidden; }
+  .feat-bar-fill { height: 100%; border-radius: 5px; background: #5b5ef4; transition: width 0.6s ease; }
+  .feat-val { font-size: 11px; font-weight: 700; color: #1a1a2e; width: 40px; text-align: right; }
+</style>
+
+<div class="deck-wrapper">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="prog" style="width:16.66%"></div>
+  </div>
+
+  <!-- SLIDE 1 -->
+  <div class="slide-card active" id="s1">
+    <div class="slide-inner">
+      <div>
+        <div class="eyebrow">Titanic ML Analysis</div>
+        <div class="slide-title">Predicting Survival<br><span>On The Titanic</span></div>
+        <div class="slide-desc">Developing a robust ensemble classification system to analyze demographic survival probability, solving historical data gaps and complex feature overlaps.</div>
+        <div class="divider"></div>
+        <div class="authors-row">
+          <div class="author-block">
+            <div class="author-label">Supervised By</div>
+            <div class="author-name">ENG. Rashed Alaql</div>
+          </div>
+          <div class="author-block">
+            <div class="author-label">Presented By (Student)</div>
+            <div class="author-name">Ziyad Aljemely</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+          <div class="challenge-card">
+            <div class="challenge-title">The Challenge</div>
+            <div class="challenge-body">Managing extensive historical missing ages, cabin records, and raw unstructured passenger records.</div>
+          </div>
+          <div class="challenge-card">
+            <div class="challenge-title teal">The Solution</div>
+            <div class="challenge-body">Design a fine-tuned, ensemble Random Forest model to isolate robust demographic predictors of survival.</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="hero-image" style="min-height:300px;">
+          <svg class="ship-svg" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+            <rect width="400" height="220" fill="#0f172a"/>
+            <ellipse cx="200" cy="180" rx="190" ry="30" fill="#1e3a5f" opacity="0.6"/>
+            <rect x="60" y="100" width="280" height="70" rx="6" fill="#334155"/>
+            <rect x="80" y="85" width="220" height="25" rx="4" fill="#475569"/>
+            <rect x="100" y="70" width="180" height="20" rx="3" fill="#64748b"/>
+            <rect x="140" y="50" width="120" height="25" rx="3" fill="#475569"/>
+            <rect x="150" y="30" width="14" height="35" rx="3" fill="#94a3b8"/>
+            <rect x="175" y="30" width="14" height="35" rx="3" fill="#94a3b8"/>
+            <rect x="200" y="35" width="14" height="30" rx="3" fill="#94a3b8"/>
+            <rect x="225" y="35" width="14" height="30" rx="3" fill="#94a3b8"/>
+            <path d="M40 165 Q200 155 360 165 L340 175 Q200 165 60 175 Z" fill="#1e40af" opacity="0.7"/>
+            <circle cx="80" cy="140" r="3" fill="#60a5fa" opacity="0.7"/>
+            <circle cx="130" cy="135" r="2" fill="#60a5fa" opacity="0.5"/>
+            <circle cx="280" cy="138" r="2" fill="#60a5fa" opacity="0.5"/>
+            <circle cx="320" cy="142" r="3" fill="#60a5fa" opacity="0.6"/>
+            <circle cx="50" cy="60" r="18" fill="#1e3a5f" opacity="0.4"/>
+            <circle cx="100" cy="40" r="25" fill="#1e3a5f" opacity="0.3"/>
+            <circle cx="330" cy="55" r="20" fill="#1e3a5f" opacity="0.4"/>
+            <g opacity="0.6">
+              <line x1="155" y1="30" x2="140" y2="10" stroke="#60a5fa" stroke-width="1.5"/>
+              <line x1="182" y1="30" x2="175" y2="8" stroke="#60a5fa" stroke-width="1.5"/>
+              <circle cx="140" cy="8" r="3" fill="#60a5fa"/>
+              <circle cx="175" cy="6" r="3" fill="#60a5fa"/>
+              <circle cx="210" cy="18" r="3" fill="#60a5fa"/>
+              <line x1="207" y1="35" x2="210" y2="18" stroke="#60a5fa" stroke-width="1.5"/>
+              <circle cx="250" cy="12" r="3" fill="#93c5fd"/>
+              <line x1="232" y1="35" x2="250" y2="12" stroke="#93c5fd" stroke-width="1.5"/>
+              <circle cx="280" cy="25" r="2" fill="#93c5fd"/>
+              <line x1="232" y1="40" x2="280" y2="25" stroke="#93c5fd" stroke-width="1"/>
+            </g>
+          </svg>
+          <div style="position:relative;z-index:2;">
+            <div class="hero-img-label">Interactive Deck</div>
+            <div class="hero-img-title">RMS Titanic Predictive Analytics</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <div class="slide-counter"><b>01</b> / 06</div>
+      <div class="dots" id="dots1"></div>
+      <div class="nav-btns">
+        <button class="btn-prev" onclick="goSlide(0)" disabled style="opacity:0.4">‹ Prev</button>
+        <button class="btn-next" onclick="goSlide(2)">Next ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2 -->
+  <div class="slide-card" id="s2">
+    <div class="slide-inner">
+      <div>
+        <div class="eyebrow">Methodology</div>
+        <div class="slide-title">Data Preprocessing &<br><span>Model Engineering</span></div>
+        <div class="slide-desc">Before training the model, we designed a systematic data cleaning and feature transforming pipeline to convert messy demographic logs into structured training vectors.</div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-title">Smart Age & Fare Imputation</div>
+            <div class="bullet-desc">Imputed missing values by mapping localized medians based on passenger ticket classes (Pclass) and genders (Sex).</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-title">One-Hot Encoding</div>
+            <div class="bullet-desc">Transformed non-numerical variables (Gender, Cabin, Embarked port) into discrete mathematical inputs.</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-title">Random Forest Classifier</div>
+            <div class="bullet-desc">Utilized an ensemble of decision trees to capture nonlinear correlations and decrease prediction variance.</div>
+          </div>
+        </div>
+      </div>
+      <div class="right-panel">
+        <div class="panel-title">Pipeline Architecture Flow</div>
+        <div class="pipeline-step">
+          <div class="step-num">1</div>
+          <div>
+            <div class="step-title">Raw CSV Ingestion</div>
+            <div class="step-desc">Loading names, genders, classes, ages, cabins, and sibling counts.</div>
+          </div>
+          <div class="step-badge blue">Pandas</div>
+        </div>
+        <div class="connector"></div>
+        <div class="pipeline-step">
+          <div class="step-num">2</div>
+          <div>
+            <div class="step-title">Cleaning & Mapping</div>
+            <div class="step-desc">Filling NaNs via localized subgroup medians; encoding text values.</div>
+          </div>
+          <div class="step-badge">Clean</div>
+        </div>
+        <div class="connector"></div>
+        <div class="pipeline-step">
+          <div class="step-num">3</div>
+          <div>
+            <div class="step-title">Evaluation Stratification</div>
+            <div class="step-desc">Splitting entries into stratified 80% train and 20% validation splits.</div>
+          </div>
+          <div class="step-badge">80/20</div>
+        </div>
+        <div class="connector"></div>
+        <div class="pipeline-step active-step">
+          <div class="step-num green">4</div>
+          <div>
+            <div class="step-title">Ensemble Learning</div>
+            <div class="step-desc">Fitting 100+ bootstrapped decision trees to target labels.</div>
+          </div>
+          <div class="step-badge green">RF Model</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <div class="slide-counter"><b>02</b> / 06</div>
+      <div class="dots" id="dots2"></div>
+      <div class="nav-btns">
+        <button class="btn-prev" onclick="goSlide(1)">‹ Prev</button>
+        <button class="btn-next" onclick="goSlide(3)">Next ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3 -->
+  <div class="slide-card" id="s3">
+    <div class="slide-inner">
+      <div>
+        <div class="eyebrow green">Evaluation Metrics</div>
+        <div class="slide-title">Test Performance &<br><span class="teal">Confusion Matrix</span></div>
+        <div class="slide-desc">The Random Forest classifier showed exceptional predictive stability on the hold-out validation set, demonstrating high generalization accuracy.</div>
+        <div class="stat-grid" style="margin-bottom:14px;">
+          <div class="stat-box">
+            <div class="stat-label green">Training Accuracy</div>
+            <div class="stat-num">89.38%</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label blue">Validation Accuracy</div>
+            <div class="stat-num">81.01%</div>
+          </div>
+        </div>
+        <div class="info-badge">
+          <div class="info-badge-title" style="color:#64748b;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Calculated Classifier Statistics</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <div class="stat-small">
+              <div class="stat-small-label">Precision</div>
+              <div class="stat-small-num">85.71%</div>
+            </div>
+            <div class="stat-small">
+              <div class="stat-small-label">Recall</div>
+              <div class="stat-small-num">60.87%</div>
+            </div>
+            <div class="stat-small">
+              <div class="stat-small-label">F1-Score</div>
+              <div class="stat-small-num">71.19%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="right-panel" style="padding:14px;">
+        <div class="panel-title">Validation Confusion Matrix</div>
+        <canvas id="confMatrix" height="200"></canvas>
+        <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:8px;line-height:1.5;">*N = 179 samples (Hold-out). Class 0: Deceased, Class 1: Survived.<br>Model predicts survivors with exceptionally high precision (only 7 false positives).</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <div class="slide-counter"><b>03</b> / 06</div>
+      <div class="dots" id="dots3"></div>
+      <div class="nav-btns">
+        <button class="btn-prev" onclick="goSlide(2)">‹ Prev</button>
+        <button class="btn-next" onclick="goSlide(4)">Next ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4 -->
+  <div class="slide-card" id="s4">
+    <div class="slide-inner">
+      <div>
+        <div class="eyebrow">Model Benchmarking</div>
+        <div class="slide-title">Model Analysis &<br><span>Survival Predictors</span></div>
+        <div class="slide-desc">We benchmarked our Random Forest classifier against a baseline Logistic Regression model to assess stability and performance boundaries.</div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-title">Random Forest Stability</div>
+            <div class="bullet-desc">Our ensemble model reduces local overfitting, outperforming standard Logistic Regression.</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-title">Key Features</div>
+            <div class="bullet-desc">Passenger Gender (Sex) and Ticket Class (Pclass) represent the strongest predictor weights.</div>
+          </div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-dot"></div>
+          <div>
+            <div class="bullet-title">Non-Linearity Captured</div>
+            <div class="bullet-desc">Complex correlations (e.g., age-survival ratios among specific classes) are natively handled.</div>
+          </div>
+        </div>
+      </div>
+      <div class="right-panel" style="padding:14px;">
+        <div class="panel-title">Accuracy Performance Benchmarking</div>
+        <canvas id="benchChart" height="180"></canvas>
+        <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:8px;line-height:1.5;">Random Forest (81.01%) exceeds Logistic Regression (80.45%) by 0.56% with superior classification stability in high-density subclasses.</div>
+        <div style="margin-top:10px;">
+          <div class="panel-title" style="margin-bottom:8px;">Feature Importance</div>
+          <div class="feat-bar-row"><div class="feat-label">Sex</div><div class="feat-bar-bg"><div class="feat-bar-fill" style="width:86.5%"></div></div><div class="feat-val">43.25%</div></div>
+          <div class="feat-bar-row"><div class="feat-label">Fare</div><div class="feat-bar-bg"><div class="feat-bar-fill" style="width:36.5%"></div></div><div class="feat-val">18.25%</div></div>
+          <div class="feat-bar-row"><div class="feat-label">Pclass</div><div class="feat-bar-bg"><div class="feat-bar-fill" style="width:29.6%"></div></div><div class="feat-val">14.79%</div></div>
+          <div class="feat-bar-row"><div class="feat-label">Age</div><div class="feat-bar-bg"><div class="feat-bar-fill" style="width:22.2%"></div></div><div class="feat-val">11.08%</div></div>
+          <div class="feat-bar-row"><div class="feat-label">SibSp</div><div class="feat-bar-bg"><div class="feat-bar-fill" style="width:9.9%"></div></div><div class="feat-val">4.96%</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <div class="slide-counter"><b>04</b> / 06</div>
+      <div class="dots" id="dots4"></div>
+      <div class="nav-btns">
+        <button class="btn-prev" onclick="goSlide(3)">‹ Prev</button>
+        <button class="btn-next" onclick="goSlide(5)">Next ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5 -->
+  <div class="slide-card" id="s5">
+    <div class="slide-inner">
+      <div>
+        <div class="eyebrow orange">Analytical Limitations</div>
+        <div class="slide-title">Data Boundaries &<br><span class="orange">Model Constraints</span></div>
+        <div class="slide-desc">No machine learning pipeline is perfect. To ensure scientific transparency, we outline specific data boundaries governing our predictions.</div>
+        <div class="crit-box">
+          <div style="font-size:18px;color:#d97706;">⚠</div>
+          <div>
+            <div class="crit-title">Critical Modeling Context</div>
+            <div class="crit-body">Tabular passenger records fail to capture real-time physical chaos, cabin structure blocks, and localized access to emergency evacuation resources.</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="limit-card">
+          <div class="limit-letter">A</div>
+          <div>
+            <div class="limit-title">Historical Data Gaps</div>
+            <div class="limit-desc">Over 70% of Cabin logs were missing. Granular physical cabin locations relative to boat decks could not be systematically modeled.</div>
+          </div>
+        </div>
+        <div class="limit-card">
+          <div class="limit-letter">B</div>
+          <div>
+            <div class="limit-title">Lack of Real-Time Context</div>
+            <div class="limit-desc">Missing immediate physical metrics (e.g., swimming capability, deck elevation at collision time, proximity to specific lifeboat stations).</div>
+          </div>
+        </div>
+        <div class="limit-card">
+          <div class="limit-letter">C</div>
+          <div>
+            <div class="limit-title">Dataset Scope Limitations</div>
+            <div class="limit-desc">The model is 100% optimized for a static 1912 passenger manifest, meaning it cannot automatically generalize to modern maritime security tasks.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <div class="slide-counter"><b>05</b> / 06</div>
+      <div class="dots" id="dots5"></div>
+      <div class="nav-btns">
+        <button class="btn-prev" onclick="goSlide(4)">‹ Prev</button>
+        <button class="btn-next" onclick="goSlide(6)">Next ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6 -->
+  <div class="slide-card" id="s6">
+    <div class="slide-inner">
+      <div>
+        <div class="eyebrow teal">Project Horizon</div>
+        <div class="slide-title">Future Roadmap &<br><span class="teal">Model Enhancements</span></div>
+        <div class="slide-desc">We look forward to expanding the predictive scope and deployment of this classification project through more advanced data-science milestones.</div>
+        <div class="deploy-box">
+          <div class="deploy-tag">⚡ Deployment Target</div>
+          <div class="deploy-body">Export and serialize the trained Random Forest model parameters to a lightweight Streamlit micro-service for instant survival likelihood calculations.</div>
+        </div>
+      </div>
+      <div class="right-panel" style="padding:18px 20px;">
+        <div class="panel-title">Development Milestones</div>
+        <div class="milestone-item">
+          <div class="m-dot"></div>
+          <div>
+            <div class="m-tag">Milestone 4.1</div>
+            <div class="m-title">Advanced Feature Engineering</div>
+            <div class="m-desc">Create refined variables combining family counts (SibSp + Parch), cluster groups, and parse deck locations directly from cabin titles.</div>
+          </div>
+        </div>
+        <div class="milestone-item">
+          <div class="m-dot"></div>
+          <div>
+            <div class="m-tag">Milestone 4.2</div>
+            <div class="m-title">Hyperparameter Tuning</div>
+            <div class="m-desc">Perform systematic 5-fold cross-validation grid searches (GridSearchCV) across estimator density, max tree depth, and leaf sizes.</div>
+          </div>
+        </div>
+        <div class="milestone-item">
+          <div class="m-dot"></div>
+          <div>
+            <div class="m-tag">Milestone 4.3</div>
+            <div class="m-title">SaaS Web App Deployment</div>
+            <div class="m-desc">Dump parameters into pickle files and package them into an interactive web dashboard for real-time risk predictions.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <div class="slide-counter"><b>06</b> / 06</div>
+      <div class="dots" id="dots6"></div>
+      <div class="nav-btns">
+        <button class="btn-prev" onclick="goSlide(5)">‹ Prev</button>
+        <button class="btn-next finish" onclick="alert('Presentation Complete! ✓')">Finish ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+let current = 1;
+const total = 6;
+
+function makeDots(containerId) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  c.innerHTML = '';
+  for (let i = 1; i <= total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === current ? ' active' : '');
+    d.onclick = (function(n){ return function(){ goSlide(n); }; })(i);
+    c.appendChild(d);
+  }
+}
+
+function goSlide(n) {
+  if (n < 1 || n > total) return;
+  document.getElementById('s' + current).classList.remove('active');
+  current = n;
+  document.getElementById('s' + current).classList.add('active');
+  document.getElementById('prog').style.width = (current / total * 100) + '%';
+  for (let i = 1; i <= total; i++) makeDots('dots' + i);
+  if (current === 3 && !window.confDrawn) drawConf();
+  if (current === 4 && !window.benchDrawn) drawBench();
+}
+
+for (let i = 1; i <= total; i++) makeDots('dots' + i);
+
+function drawConf() {
+  window.confDrawn = true;
+  const ctx = document.getElementById('confMatrix').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['TN (0→0)', 'FP (0→1)', 'FN (1→0)', 'TP (1→1)'],
+      datasets: [{
+        data: [103, 7, 27, 42],
+        backgroundColor: ['#1e40af','#93c5fd','#bfdbfe','#3b82f6'],
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.parsed.y + ' samples'
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: '#f1f5f9' },
+          ticks: { font: { size: 10 } }
+        },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function drawBench() {
+  window.benchDrawn = true;
+  const ctx = document.getElementById('benchChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Random Forest', 'Logistic Regression'],
+      datasets: [{
+        data: [81.01, 80.45],
+        backgroundColor: ['#1e40af', '#93c5fd'],
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + '%' } }
+      },
+      scales: {
+        y: {
+          min: 70,
+          max: 90,
+          grid: { color: '#f1f5f9' },
+          ticks: { font: { size: 10 }, callback: v => v + '%' }
+        },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+</script>
